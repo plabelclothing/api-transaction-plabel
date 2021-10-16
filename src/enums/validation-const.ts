@@ -1,0 +1,1 @@
+export const PaymentMethodCodeValidation = ['PAY_PAL'];

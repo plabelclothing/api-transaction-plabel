@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - test
+      - refs/tags/release-*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  isTest: $[eq(variables['Build.SourceBranch'], 'refs/heads/test')]
+  ReleaseFileName: $(Build.Repository.Name)
+  TagBuild: $[ replace(variables['Build.SourceBranch'], 'refs/tags/', '') ]
+  TmpDirName: '_TMP'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '12.x'
+
+  - task: PowerShell@2
+    displayName: 'Create tag build'
+    continueOnError: false
+    condition: and(succeeded(), eq(variables.isTest, true))
+    inputs:
+      targetType: 'inline'
+      script: |
+        $versionPck=$(node -pe "require('./package.json').version");
+        Write-Host "##vso[task.setvariable variable=TagBuild]test-$versionPck"
+
+  - task: CmdLine@2
+    displayName: 'Create release info file'
+    continueOnError: false
+    inputs:
+      targetType: 'inline'
+      script: |
+        COMMIT_ID=$(git rev-parse --verify HEAD);
+        COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an');
+        COMMIT_MESSAGE=$(git show -s --format=%B);
+        JSON_STRING=$(node -pe ";
+          JSON.stringify({
+            project_version: require('./package.json').version,
+            build_time: ''+new Date().toISOString().replace('T', ' ').slice(0, 19),
+            build_number: '$(Build.BuildNumber)',
+            build_tag: '$(TagBuild)',
+            git: {
+              commit_id: '$(echo $COMMIT_ID)',
+              commit_author: '$(echo $COMMIT_AUTHOR)',
+              commit_message: '$(echo $COMMIT_MESSAGE)'
+            }
+          })");
+        echo $JSON_STRING | json_pp > release-info.json
+  - task: CmdLine@2
+    displayName: npm install and build
+    continueOnError: false
+    inputs:
+      script: |
+        npm install
+        npm run build
+        rm -rf node_modules
+        npm install --production
+        npm audit fix
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura # or JaCoCo
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/coverage'
+  - task: CopyFiles@2
+    displayName: Copy Files
+    continueOnError: false
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: |
+        **/*
+        !.git/**/*
+        !.nyc_output/**/*
+        !coverage/**/*
+        !src/**/*
+        !test/**/*
+      TargetFolder: '$(Build.SourcesDirectory)/$(TmpDirName)'
+  - task: ArchiveFiles@2
+    displayName: 'Build archive of sources'
+    continueOnError: false
+    inputs:
+      rootFolderOrFile: '$(TmpDirName)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(ReleaseFileName)_$(TagBuild).zip'
+      replaceExistingArchive: true
+      verbose: true
+  - task: PublishBuildArtifacts@1
+    continueOnError: false
+    displayName: 'Publish artifact'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: '$(ReleaseFileName)'
+      publishLocation: 'Container'
