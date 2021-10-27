@@ -10,3 +10,5 @@ __export(require("./mail"));
 __export(require("./validation-const"));
 __export(require("./payment-method-code"));
 __export(require("./transaction-const"));
+__export(require("./paypal-const"));
+__export(require("./order-const"));

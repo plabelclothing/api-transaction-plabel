@@ -21,6 +21,11 @@ const qs_1 = __importDefault(require("qs"));
 const enums_1 = require("../enums");
 const services_1 = require("../services");
 class PayPal {
+    /**
+     * Create transaction
+     * @param data
+     * @param authData
+     */
     sale(data, authData) {
         return __awaiter(this, void 0, void 0, function* () {
             const transactionUuid = uuid_1.v4();
@@ -97,5 +102,88 @@ class PayPal {
         });
     }
     ;
+    /**
+     * Check sale notify
+     * @param data
+     * @param authData
+     */
+    checkNotify(data, authData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
+                const dataReq = qs_1.default.stringify({
+                    grant_type: 'client_credentials'
+                });
+                const resultOfTokenGet = yield axios_1.default({
+                    method: 'POST',
+                    url: authData.urls.token,
+                    headers: {
+                        Authorization: authHeader,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    data: dataReq
+                });
+                const dataReqCheckNotify = {
+                    transmission_id: data.transmissionId,
+                    transmission_time: data.transmissionTime,
+                    cert_url: data.certUrl,
+                    auth_algo: data.alg,
+                    transmission_sig: data.transmissionSig,
+                    webhook_id: authData.webHookIds.checkOrderApprove,
+                    webhook_event: data.body
+                };
+                const resultOfCheckNotify = yield axios_1.default({
+                    method: 'POST',
+                    url: authData.urls.checkNotify,
+                    headers: {
+                        Authorization: `${resultOfTokenGet.data.token_type} ${resultOfTokenGet.data.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    data: dataReqCheckNotify
+                });
+                return resultOfCheckNotify.data.verification_status;
+            }
+            catch (e) {
+                throw e;
+            }
+        });
+    }
+    /**
+     * Transaction capture
+     * @param transactionExternalId
+     * @param authData
+     */
+    capture(transactionExternalId, authData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
+                const data = qs_1.default.stringify({
+                    grant_type: 'client_credentials'
+                });
+                const resultOfTokenGet = yield axios_1.default({
+                    method: 'POST',
+                    url: authData.urls.token,
+                    headers: {
+                        Authorization: authHeader,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    data: data
+                });
+                const resultOfCaptureTransaction = yield axios_1.default({
+                    method: 'POST',
+                    url: `${authData.urls.createOrder}/${transactionExternalId}/capture`,
+                    headers: {
+                        Authorization: `${resultOfTokenGet.data.token_type} ${resultOfTokenGet.data.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    data: {}
+                });
+                return resultOfCaptureTransaction.data;
+            }
+            catch (e) {
+                throw e;
+            }
+        });
+    }
 }
 exports.PayPal = PayPal;

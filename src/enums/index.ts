@@ -5,3 +5,5 @@ export * from './mail';
 export * from './validation-const';
 export * from './payment-method-code';
 export * from './transaction-const';
+export * from './paypal-const';
+export * from './order-const';

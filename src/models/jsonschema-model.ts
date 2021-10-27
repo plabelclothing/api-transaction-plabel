@@ -84,6 +84,46 @@ const transactionInitSchema = {
     additionalProperties: false
 };
 
+const notifyPayPalHeaders = {
+    type: 'object',
+    properties: {
+        'paypal-transmission-id': {
+            type: 'string'
+        },
+        'paypal-transmission-time': {
+            type: 'string'
+        },
+        'paypal-cert-url': {
+            type: 'string'
+        },
+        'paypal-auth-algo': {
+            type: 'string'
+        },
+        'paypal-transmission-sig': {
+            type: 'string'
+        },
+    },
+    required: ['paypal-transmission-id', 'paypal-transmission-time', 'paypal-cert-url', 'paypal-auth-algo', 'paypal-transmission-sig']
+};
+
+const notifyPayPalBody = {
+    type: 'object',
+    properties: {
+        resource: {
+            type: 'object',
+            properties: {
+                purchase_units: {
+                    type: 'array',
+                }
+            },
+            required: ['purchase_units']
+        }
+    },
+    required: ['resource']
+};
+
 export {
     transactionInitSchema,
+    notifyPayPalBody,
+    notifyPayPalHeaders,
 }

@@ -10,6 +10,7 @@ const checkAuth = (req: Request, res: Response, next: NextFunction) => {
         req.method === 'OPTIONS'
         || path.includes('/v1/check/ping')
         || path.includes('/v1/check/telemetry')
+        || path.includes('/v1/notification')
     ) return next();
 
     const auth: string | undefined = req.headers.authorization;

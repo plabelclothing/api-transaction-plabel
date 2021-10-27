@@ -8,7 +8,8 @@ const checkAuth = (req, res, next) => {
     const { path } = req;
     if (req.method === 'OPTIONS'
         || path.includes('/v1/check/ping')
-        || path.includes('/v1/check/telemetry'))
+        || path.includes('/v1/check/telemetry')
+        || path.includes('/v1/notification'))
         return next();
     const auth = req.headers.authorization;
     const token = `Bearer ${config_1.default.expressApi.authorizationToken}`;

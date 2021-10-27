@@ -35,4 +35,13 @@ export declare module Payment {
             checkOrderApprove: string,
         }
     }
+
+    export interface CheckNotifyPayPal {
+        transmissionId: string | string[] | undefined,
+        transmissionTime: string | string[] | undefined,
+        certUrl: string | string[] | undefined,
+        alg: string | string[] | undefined,
+        transmissionSig: string | string[] | undefined,
+        body: {}
+    }
 }

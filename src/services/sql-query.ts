@@ -152,7 +152,7 @@ const executeQuery = async <T>(query: string, params: any[], isWrite: boolean = 
  * @param transactionUuid
  * @param data
  */
-MySqlStorage.insertNotify = (transactionUuid: string, data: string) => executeQuery<[][]>('CALL app_transaction__notification_ipn__insert(?,?)', [
+MySqlStorage.insertNotify = (transactionUuid: string | null, data: string) => executeQuery<[][]>('CALL app_transaction__notification_ipn__insert(?,?)', [
     transactionUuid,
     data,
 ], true)
