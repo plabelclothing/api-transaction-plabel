@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "allowJs": true,
+        "outDir": "./dist",
+        "removeComments": false,
+        "strict": true,
+        "noImplicitAny": true,
+        "baseUrl": "./src",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "typeRoots": [
+            "src/types"
+        ],
+        "types": [
+            "node",
+            "mocha"
+        ]
+    },
+    "exclude": [
+        "coverage",
+        "node_modules",
+        "dist",
+        "config/*.js",
+        "test"
+    ]
+}
