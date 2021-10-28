@@ -7,6 +7,7 @@
 		"stage_unix_export": "export NODE_ENV=stage && export DEBUG=* && node build/index.js export",
 		"build": "tsc",
 		"linter": "eslint ./ --ext .ts",
+		"production": "NODE_ENV=production NODE_PATH=./dist node ./dist/index.js",
 		"test": "export NODE_ENV=development && TS_NODE_FILES=true nyc --reporter=cobertura mocha --recursive --require ts-node/register ./test/**/*.test.ts --exit"
 	},
 	"engines": {
