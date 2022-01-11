@@ -64,7 +64,7 @@ const payPalNotify = async (req, res) => {
                 response: {
                     status: "FAIL" /* FAIL */,
                     data: {
-                        errorCode: "NOTIFY_IS_NOT_CORRECT" /* NOTIFY_IS_NOT_CORRECT */,
+                        errorCode: "NOTIFY_IS_NOT_CORRECT__ERROR" /* NOTIFY_IS_NOT_CORRECT */,
                         errorId: 10000011 /* NOTIFY_IS_NOT_CORRECT */,
                     }
                 }
@@ -76,7 +76,7 @@ const payPalNotify = async (req, res) => {
             orderStatus = "canceled" /* CANCELED */;
         }
         if (body.resource.status === "APPROVED" /* APPROVED */) {
-            const resultOfCaptureTrx = await paypal.capture(body.resource.id, authData);
+            const resultOfCaptureTrx = await paypal.capture(body.resource.id, transactionUuid, authData);
             await services_1.MySqlStorage.insertNotify(body.transactionUuid, JSON.stringify(resultOfCaptureTrx));
             let transactionSettledAt = parseInt(luxon_1.DateTime.local().setZone(enums_1.LuxonTimezone.TZ).toFormat(enums_1.LuxonTimezone.UNIX_TIMESTAMP_FORMAT));
             if (resultOfCaptureTrx.status !== "COMPLETED" /* COMPLETED */) {
@@ -84,7 +84,7 @@ const payPalNotify = async (req, res) => {
                 orderStatus = "new" /* NEW */;
                 transactionSettledAt = null;
             }
-            await services_1.MySqlStorage.updateTransaction(transactionUuid, null, transactionStatus, transactionSettledAt);
+            await services_1.MySqlStorage.updateTransaction(transactionUuid, null, transactionStatus, transactionSettledAt, null);
         }
         await services_1.MySqlStorage.updateUserOrderData(transactionUuid, JSON.stringify(body.resource.purchase_units[0].shipping), orderStatus, orderStatus === "canceled" /* CANCELED */ ? "new" /* NEW */ : "pending" /* PENDING */);
         res.status(200).send({
@@ -92,7 +92,7 @@ const payPalNotify = async (req, res) => {
         });
         /** Prepare mail data **/
         try {
-            await utils_1.sendPaymentEmail(transactionStatus, transactionUuid);
+            await utils_1.sendPaymentEmail(transactionStatus, transactionUuid, false);
         }
         catch (e) {
             utils_1.logger.log("error" /* ERROR */, utils_1.loggerMessage({

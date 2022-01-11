@@ -107,7 +107,7 @@ const payPalNotify = async (req: Request, res: Response) => {
         }
 
         if (body.resource.status === PayPalStatus.APPROVED) {
-            const resultOfCaptureTrx = await paypal.capture(body.resource.id, authData);
+            const resultOfCaptureTrx = await paypal.capture(body.resource.id, transactionUuid, authData);
 
             await MySqlStorage.insertNotify(body.transactionUuid, JSON.stringify(resultOfCaptureTrx));
 
@@ -118,7 +118,7 @@ const payPalNotify = async (req: Request, res: Response) => {
                 orderStatus = OrderStatus.NEW;
                 transactionSettledAt = null;
             }
-            await MySqlStorage.updateTransaction(transactionUuid, null, transactionStatus, transactionSettledAt);
+            await MySqlStorage.updateTransaction(transactionUuid, null, transactionStatus, transactionSettledAt, null);
         }
 
         await MySqlStorage.updateUserOrderData(transactionUuid, JSON.stringify(body.resource.purchase_units[0].shipping), orderStatus, orderStatus === OrderStatus.CANCELED ? OrderStatus.NEW : OrderStatus.PENDING);
@@ -129,7 +129,7 @@ const payPalNotify = async (req: Request, res: Response) => {
 
         /** Prepare mail data **/
         try {
-            await sendPaymentEmail(transactionStatus, transactionUuid);
+            await sendPaymentEmail(transactionStatus, transactionUuid, false);
         } catch (e) {
             logger.log(LoggerLevel.ERROR, loggerMessage({
                 error: e,

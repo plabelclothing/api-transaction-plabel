@@ -11,6 +11,8 @@ const qs_1 = __importDefault(require("qs"));
 /** Locale modules **/
 const enums_1 = require("../enums");
 const services_1 = require("../services");
+const luxon_1 = require("luxon");
+const utils_1 = require("../utils");
 class PayPal {
     /**
      * Create transaction
@@ -72,7 +74,7 @@ class PayPal {
                 data: dataOrder
             });
             await services_1.MySqlStorage.insertTransactionLog(transactionUuid, JSON.stringify(resultOfCreateOrder.data));
-            await services_1.MySqlStorage.updateTransaction(transactionUuid, resultOfCreateOrder.data.id, enums_1.TransactionStatus.PENDING, null);
+            await services_1.MySqlStorage.updateTransaction(transactionUuid, resultOfCreateOrder.data.id, enums_1.TransactionStatus.PENDING, null, null);
             const links = resultOfCreateOrder.data.links;
             let url;
             for (const property in links) {
@@ -85,7 +87,7 @@ class PayPal {
         }
         catch (e) {
             await (async () => {
-                await services_1.MySqlStorage.updateTransaction(transactionUuid, null, enums_1.TransactionStatus.ERROR, null);
+                await services_1.MySqlStorage.updateTransaction(transactionUuid, null, enums_1.TransactionStatus.ERROR, null, null);
             })();
             throw e;
         }
@@ -138,9 +140,10 @@ class PayPal {
     /**
      * Transaction capture
      * @param transactionExternalId
+     * @param transactionUuid
      * @param authData
      */
-    async capture(transactionExternalId, authData) {
+    async capture(transactionExternalId, transactionUuid, authData) {
         try {
             const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
             const data = qs_1.default.stringify({
@@ -164,9 +167,79 @@ class PayPal {
                 },
                 data: {}
             });
+            await services_1.MySqlStorage.updateTransaction(transactionUuid, null, null, null, resultOfCaptureTransaction.data.purchase_units[0].payments.captures[0].id);
+            await services_1.MySqlStorage.insertTransactionLog(transactionUuid, JSON.stringify(resultOfCaptureTransaction.data));
             return resultOfCaptureTransaction.data;
         }
         catch (e) {
+            throw e;
+        }
+    }
+    /**
+     * Create refund
+     * @param refundData
+     * @param authData
+     */
+    async refund(refundData, authData) {
+        try {
+            const resultOfInsertRefund = await services_1.MySqlStorage.insertRefund(refundData.userUuid, refundData.userCartUuid, refundData.userCartItems, refundData.orderUuid, refundData.orderUuidSale, refundData.refundTransactionUuid, refundData.transactionUuid);
+            if (!resultOfInsertRefund.length) {
+                throw new Error('Refund is not created');
+            }
+            const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
+            const data = qs_1.default.stringify({
+                grant_type: 'client_credentials'
+            });
+            const resultOfTokenGet = await axios_1.default({
+                method: 'POST',
+                url: authData.urls.token,
+                headers: {
+                    Authorization: authHeader,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: data
+            });
+            await services_1.MySqlStorage.insertTransactionLog(refundData.refundTransactionUuid, JSON.stringify(resultOfTokenGet.data));
+            const resultOfRefundTransaction = await axios_1.default({
+                method: 'POST',
+                url: `${authData.urls.refund}/${refundData.captureId}/refund`,
+                headers: {
+                    Authorization: `${resultOfTokenGet.data.token_type} ${resultOfTokenGet.data.access_token}`,
+                    'Content-Type': 'application/json',
+                    'PayPal-Request-Id': refundData.refundTransactionUuid,
+                },
+                data: {
+                    amount: {
+                        value: resultOfInsertRefund[0].amount,
+                        currency_code: refundData.dictCurrencyIso4217
+                    },
+                    note_to_payer: refundData.title,
+                }
+            });
+            await services_1.MySqlStorage.insertTransactionLog(refundData.refundTransactionUuid, JSON.stringify(resultOfRefundTransaction.data));
+            if (resultOfRefundTransaction.data.status.toUpperCase() === "COMPLETED" /* COMPLETED */) {
+                /** Prepare mail data **/
+                try {
+                    await utils_1.sendPaymentEmail(enums_1.TransactionStatus.SETTLED, refundData.refundTransactionUuid, true);
+                }
+                catch (e) {
+                    utils_1.logger.log("error" /* ERROR */, utils_1.loggerMessage({
+                        error: e,
+                        message: 'Error with prepare mail content',
+                        additionalData: e.additionalData,
+                    }));
+                }
+                return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.SETTLED, parseInt(luxon_1.DateTime.local().setZone(enums_1.LuxonTimezone.TZ).toFormat(enums_1.LuxonTimezone.UNIX_TIMESTAMP_FORMAT)), null);
+            }
+            else if (resultOfRefundTransaction.data.status.toUpperCase() === "PENDING" /* PENDING */) {
+                return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.PENDING, null, null);
+            }
+            return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.CANCELED, null, null);
+        }
+        catch (e) {
+            await (async () => {
+                await services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, null, enums_1.TransactionStatus.ERROR, null, null);
+            })();
             throw e;
         }
     }

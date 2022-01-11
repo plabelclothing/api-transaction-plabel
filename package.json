@@ -1,6 +1,6 @@
 {
 	"name": "api-transaction-plabel",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "api-transaction-plabel",
 	"scripts": {
 		"development_unix_export": "export NODE_ENV=development && export DEBUG=* && ts-node-dev --respawn --transpile-only src/index.ts",
