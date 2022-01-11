@@ -258,12 +258,14 @@ MySqlStorage.insertTransaction = (transactionUuid, userOrderUuid, paymentMethodC
  * @param transactionExternalId
  * @param transactionStatus
  * @param transactionSettledAt
+ * @param captureId
  */
-MySqlStorage.updateTransaction = (transactionUuid, transactionExternalId, transactionStatus, transactionSettledAt) => executeQuery('CALL app_transaction__transaction__update(?,?,?,?)', [
+MySqlStorage.updateTransaction = (transactionUuid, transactionExternalId, transactionStatus, transactionSettledAt, captureId) => executeQuery('CALL app_transaction__transaction__update(?,?,?,?,?)', [
     transactionUuid,
     transactionExternalId,
     transactionStatus,
     transactionSettledAt,
+    captureId,
 ], true)
     .then((rows) => (Promise.resolve(rows[0])))
     .catch((e) => {
@@ -405,6 +407,87 @@ MySqlStorage.insertEmail = (emailUuid, userUuid, to, template, status, body) => 
     const error = new utils_1.ResponseThrowError({
         statusCode: 500,
         message: `Failed while executing insertEmail function. \nCaused by:\n ${e.stack}`,
+        response: {
+            status: "FAIL" /* FAIL */,
+            message: 'Internal server error',
+            data: {
+                errorCode: "MYSQL__ERROR" /* MYSQL_SERVICE__QUERY_ERR */,
+                errorId: 10000006 /* MYSQL_SERVICE__QUERY_ERR */,
+            }
+        }
+    });
+    return Promise.reject(error);
+});
+/**
+ * Check exist refund
+ * @param userCartItems
+ */
+MySqlStorage.checkRefund = (userCartItems) => executeQuery('CALL app_transaction__transaction__refund__check(?)', [
+    userCartItems
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+    const error = new utils_1.ResponseThrowError({
+        statusCode: 500,
+        message: `Failed while executing checkRefund function. \nCaused by:\n ${e.stack}`,
+        response: {
+            status: "FAIL" /* FAIL */,
+            message: 'Internal server error',
+            data: {
+                errorCode: "MYSQL__ERROR" /* MYSQL_SERVICE__QUERY_ERR */,
+                errorId: 10000006 /* MYSQL_SERVICE__QUERY_ERR */,
+            }
+        }
+    });
+    return Promise.reject(error);
+});
+/**
+ * Insert refund
+ * @param userUuid
+ * @param userCartUuid
+ * @param userCartItems
+ * @param userOrderUuid
+ * @param userOrderUuidSale
+ * @param transactionUuid
+ * @param transactionUuidSale
+ */
+MySqlStorage.insertRefund = (userUuid, userCartUuid, userCartItems, userOrderUuid, userOrderUuidSale, transactionUuid, transactionUuidSale) => executeQuery('CALL app_transaction__transaction__refund__insert(?,?,?,?,?,?,?)', [
+    userUuid,
+    userCartUuid,
+    userCartItems,
+    userOrderUuid,
+    userOrderUuidSale,
+    transactionUuid,
+    transactionUuidSale,
+], true)
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+    const error = new utils_1.ResponseThrowError({
+        statusCode: 500,
+        message: `Failed while executing insertRefund function. \nCaused by:\n ${e.stack}`,
+        response: {
+            status: "FAIL" /* FAIL */,
+            message: 'Internal server error',
+            data: {
+                errorCode: "MYSQL__ERROR" /* MYSQL_SERVICE__QUERY_ERR */,
+                errorId: 10000006 /* MYSQL_SERVICE__QUERY_ERR */,
+            }
+        }
+    });
+    return Promise.reject(error);
+});
+/**
+ * Get refund data
+ * @param userCartItems
+ */
+MySqlStorage.getRefundData = (userCartItems) => executeQuery('CALL app_transaction__transaction__refund__get_data(?)', [
+    userCartItems
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+    const error = new utils_1.ResponseThrowError({
+        statusCode: 500,
+        message: `Failed while executing getRefundData function. \nCaused by:\n ${e.stack}`,
         response: {
             status: "FAIL" /* FAIL */,
             message: 'Internal server error',

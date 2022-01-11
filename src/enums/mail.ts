@@ -10,6 +10,7 @@ export enum MailStatus {
 export enum MailTemplate {
     ORDER_INVOICE = 'order_invoice',
     PAYMENT_STATUS = 'payment_status',
+    REFUND_INVOICE = 'refund_invoice',
 }
 
 export enum SupportMail {
@@ -29,6 +30,14 @@ export const MailSubject: Utils.MailSubject = {
         translate: {
             en: 'Receipt | PLABEL COMPANY',
             ru: 'Подтверждение оплаты | PLABEL COMPANY',
+        },
+        layout: 'layout_payment',
+        version: '1.0.0',
+    },
+    refund_invoice: {
+        translate: {
+            en: 'Refund confirmation | PLABEL COMPANY',
+            ru: 'Подтверждение возврата | PLABEL COMPANY',
         },
         layout: 'layout_payment',
         version: '1.0.0',

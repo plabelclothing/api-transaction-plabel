@@ -107,7 +107,7 @@ const createTpl = (type: string, lang: string = 'en', additionalData: Utils.Mail
     }
 };
 
-const sendPaymentEmail = async (transactionStatus: string, transactionUuid: string) => {
+const sendPaymentEmail = async (transactionStatus: string, transactionUuid: string, isRefund: boolean) => {
     try {
         const resultOfGetOrderData = await MySqlStorage.getEmailData(transactionUuid);
 
@@ -120,22 +120,24 @@ const sendPaymentEmail = async (transactionStatus: string, transactionUuid: stri
         const parsedAddress = JSON.parse(resultOfGetOrderData[0].user_order__address);
         const transactionAmount = currencyFormatter.format(resultOfGetOrderData[0].transaction__amount, {code: resultOfGetOrderData[0].dict_currency__iso4217});
 
-        /** Send mail with transaction status **/
-        const mailDataTransactionStatus = {
-            USER_ORDER_ID: resultOfGetOrderData[0].user_order__external_id,
-            TRANSACTION_STATUS: textLang.transactionStatus[resultOfGetOrderData[0].transaction__status],
-            PAYMENT_METHOD: resultOfGetOrderData[0].payment_method__name,
-            TRANSACTION_AMOUNT: transactionAmount,
-        };
+        if (!isRefund) {
+            /** Send mail with transaction status **/
+            const mailDataTransactionStatus = {
+                USER_ORDER_ID: resultOfGetOrderData[0].user_order__external_id,
+                TRANSACTION_STATUS: textLang.transactionStatus[resultOfGetOrderData[0].transaction__status],
+                PAYMENT_METHOD: resultOfGetOrderData[0].payment_method__name,
+                TRANSACTION_AMOUNT: transactionAmount,
+            };
 
-        await mailerUtil({
-            mailTo: parsedAddress.address.email,
-            mailUuid: v4(),
-            type: MailTemplate.PAYMENT_STATUS,
-            userUuid: resultOfGetOrderData[0].user__uuid || null,
-            lang: resultOfGetOrderData[0].transaction_customer__locale,
-            additionalData: mailDataTransactionStatus,
-        });
+            await mailerUtil({
+                mailTo: parsedAddress.address.email,
+                mailUuid: v4(),
+                type: MailTemplate.PAYMENT_STATUS,
+                userUuid: resultOfGetOrderData[0].user__uuid || null,
+                lang: resultOfGetOrderData[0].transaction_customer__locale,
+                additionalData: mailDataTransactionStatus,
+            });
+        }
 
         if (transactionStatus !== TransactionStatus.SETTLED) {
             return true;
@@ -176,7 +178,7 @@ const sendPaymentEmail = async (transactionStatus: string, transactionUuid: stri
         await mailerUtil({
             mailTo: parsedAddress.address.email,
             mailUuid: v4(),
-            type: MailTemplate.ORDER_INVOICE,
+            type: isRefund ? MailTemplate.REFUND_INVOICE : MailTemplate.ORDER_INVOICE,
             userUuid: resultOfGetOrderData[0].user__uuid || null,
             lang: resultOfGetOrderData[0].transaction_customer__locale,
             additionalData: mailDataInvoice,

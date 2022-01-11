@@ -84,6 +84,18 @@ const transactionInitSchema = {
     additionalProperties: false
 };
 
+const transactionRefundSchema = {
+    type: 'object',
+    properties: {
+        userCartItems: {
+            type: 'array',
+            items: uuid,
+        },
+    },
+    required: ['userCartItems'],
+    additionalProperties: false,
+};
+
 const notifyPayPalHeaders = {
     type: 'object',
     properties: {
@@ -126,4 +138,5 @@ export {
     transactionInitSchema,
     notifyPayPalBody,
     notifyPayPalHeaders,
+    transactionRefundSchema,
 }
