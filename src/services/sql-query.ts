@@ -265,12 +265,14 @@ MySqlStorage.insertTransaction = (transactionUuid: string, userOrderUuid: string
  * @param transactionExternalId
  * @param transactionStatus
  * @param transactionSettledAt
+ * @param captureId
  */
-MySqlStorage.updateTransaction = (transactionUuid: string, transactionExternalId: string | null, transactionStatus: string | null, transactionSettledAt: number | null) => executeQuery<[][]>('CALL app_transaction__transaction__update(?,?,?,?)', [
+MySqlStorage.updateTransaction = (transactionUuid: string, transactionExternalId: string | null, transactionStatus: string | null, transactionSettledAt: number | null, captureId: string | null) => executeQuery<[][]>('CALL app_transaction__transaction__update(?,?,?,?,?)', [
     transactionUuid,
     transactionExternalId,
     transactionStatus,
     transactionSettledAt,
+    captureId,
 ], true)
     .then((rows) => (Promise.resolve(rows[0])))
     .catch((e) => {
@@ -417,6 +419,90 @@ MySqlStorage.insertEmail = (emailUuid: string, userUuid: string | null, to: stri
         const error = new ResponseThrowError({
             statusCode: 500,
             message: `Failed while executing insertEmail function. \nCaused by:\n ${e.stack}`,
+            response: {
+                status: StatusHttp.FAIL,
+                message: 'Internal server error',
+                data: {
+                    errorCode: LogCode.MYSQL_SERVICE__QUERY_ERR,
+                    errorId: LogCodeId.MYSQL_SERVICE__QUERY_ERR,
+                }
+            }
+        });
+        return Promise.reject(error);
+    });
+
+/**
+ * Check exist refund
+ * @param userCartItems
+ */
+MySqlStorage.checkRefund = (userCartItems: string) => executeQuery<DbQuery.CheckRefund[][]>('CALL app_transaction__transaction__refund__check(?)', [
+    userCartItems
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+        const error = new ResponseThrowError({
+            statusCode: 500,
+            message: `Failed while executing checkRefund function. \nCaused by:\n ${e.stack}`,
+            response: {
+                status: StatusHttp.FAIL,
+                message: 'Internal server error',
+                data: {
+                    errorCode: LogCode.MYSQL_SERVICE__QUERY_ERR,
+                    errorId: LogCodeId.MYSQL_SERVICE__QUERY_ERR,
+                }
+            }
+        });
+        return Promise.reject(error);
+    });
+
+/**
+ * Insert refund
+ * @param userUuid
+ * @param userCartUuid
+ * @param userCartItems
+ * @param userOrderUuid
+ * @param userOrderUuidSale
+ * @param transactionUuid
+ * @param transactionUuidSale
+ */
+MySqlStorage.insertRefund = (userUuid: string, userCartUuid: string, userCartItems: string, userOrderUuid: string, userOrderUuidSale: string, transactionUuid: string, transactionUuidSale: string) => executeQuery<DbQuery.InsertRefund[][]>('CALL app_transaction__transaction__refund__insert(?,?,?,?,?,?,?)', [
+    userUuid,
+    userCartUuid,
+    userCartItems,
+    userOrderUuid,
+    userOrderUuidSale,
+    transactionUuid,
+    transactionUuidSale,
+], true)
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+        const error = new ResponseThrowError({
+            statusCode: 500,
+            message: `Failed while executing insertRefund function. \nCaused by:\n ${e.stack}`,
+            response: {
+                status: StatusHttp.FAIL,
+                message: 'Internal server error',
+                data: {
+                    errorCode: LogCode.MYSQL_SERVICE__QUERY_ERR,
+                    errorId: LogCodeId.MYSQL_SERVICE__QUERY_ERR,
+                }
+            }
+        });
+        return Promise.reject(error);
+    });
+
+/**
+ * Get refund data
+ * @param userCartItems
+ */
+MySqlStorage.getRefundData = (userCartItems: string) => executeQuery<DbQuery.GetRefundData[][]>('CALL app_transaction__transaction__refund__get_data(?)', [
+    userCartItems
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+        const error = new ResponseThrowError({
+            statusCode: 500,
+            message: `Failed while executing getRefundData function. \nCaused by:\n ${e.stack}`,
             response: {
                 status: StatusHttp.FAIL,
                 message: 'Internal server error',

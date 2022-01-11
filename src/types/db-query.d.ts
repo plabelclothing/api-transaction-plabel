@@ -34,4 +34,24 @@ export declare module DbQuery {
 
         transaction_customer__locale: string
     }
+
+    export interface CheckRefund {
+        user_cart_items__uuid: string,
+    }
+
+    export interface GetRefundData {
+        user__uuid: string,
+        user_order__uuid: string,
+        user_order__external_id: string,
+        transaction__uuid: string,
+        transaction__external_id: string,
+        payment_method__code: string,
+        dict_currency__iso4217: string,
+        transaction__status: string,
+        transaction__capture_id: string,
+    }
+
+    export interface InsertRefund {
+        amount: number,
+    }
 }

@@ -23,6 +23,20 @@ export declare module Payment {
         },
     }
 
+    export interface RefundData {
+        userUuid: string,
+        userCartUuid: string,
+        userCartItems: string,
+        orderUuid: string,
+        orderUuidSale: string,
+        refundTransactionUuid: string,
+        transactionUuid: string,
+        saleExternalId: string,
+        dictCurrencyIso4217: string,
+        title: string,
+        captureId: string,
+    }
+
     export interface AuthData {
         username: string,
         password: string,
@@ -30,6 +44,7 @@ export declare module Payment {
             token: string,
             createOrder: string,
             checkNotify: string,
+            refund: string,
         },
         webHookIds: {
             checkOrderApprove: string,

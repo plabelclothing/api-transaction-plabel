@@ -6,9 +6,11 @@ import axios from 'axios';
 import qs from 'qs';
 
 /** Locale modules **/
-import {TransactionStatus, ReturnUrl} from '../enums';
+import {TransactionStatus, ReturnUrl, PayPalStatus, LuxonTimezone, LoggerLevel} from '../enums';
 import {MySqlStorage} from '../services';
 import {Payment} from '../types/payment';
+import {DateTime} from "luxon";
+import {logger, loggerMessage, sendPaymentEmail} from '../utils';
 
 class PayPal {
 
@@ -87,7 +89,7 @@ class PayPal {
             });
 
             await MySqlStorage.insertTransactionLog(transactionUuid, JSON.stringify(resultOfCreateOrder.data));
-            await MySqlStorage.updateTransaction(transactionUuid, resultOfCreateOrder.data.id, TransactionStatus.PENDING, null);
+            await MySqlStorage.updateTransaction(transactionUuid, resultOfCreateOrder.data.id, TransactionStatus.PENDING, null, null);
 
             const links = resultOfCreateOrder.data.links;
             let url;
@@ -101,7 +103,7 @@ class PayPal {
             return url;
         } catch (e) {
             await (async () => {
-                await MySqlStorage.updateTransaction(transactionUuid, null, TransactionStatus.ERROR, null);
+                await MySqlStorage.updateTransaction(transactionUuid, null, TransactionStatus.ERROR, null, null);
             })();
             throw e;
         }
@@ -158,9 +160,10 @@ class PayPal {
     /**
      * Transaction capture
      * @param transactionExternalId
+     * @param transactionUuid
      * @param authData
      */
-    async capture(transactionExternalId: string, authData: Payment.AuthData) {
+    async capture(transactionExternalId: string, transactionUuid: string, authData: Payment.AuthData) {
         try {
             const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
             const data = qs.stringify({
@@ -187,8 +190,93 @@ class PayPal {
                 data: {}
             });
 
+            await MySqlStorage.updateTransaction(transactionUuid, null, null, null, resultOfCaptureTransaction.data.purchase_units[0].payments.captures[0].id);
+            await MySqlStorage.insertTransactionLog(transactionUuid, JSON.stringify(resultOfCaptureTransaction.data));
+
             return resultOfCaptureTransaction.data;
         } catch (e) {
+            throw e;
+        }
+    }
+
+    /**
+     * Create refund
+     * @param refundData
+     * @param authData
+     */
+    async refund(refundData: Payment.RefundData, authData: Payment.AuthData) {
+        try {
+            const resultOfInsertRefund = await MySqlStorage.insertRefund(
+                refundData.userUuid,
+                refundData.userCartUuid,
+                refundData.userCartItems,
+                refundData.orderUuid,
+                refundData.orderUuidSale,
+                refundData.refundTransactionUuid,
+                refundData.transactionUuid,
+            );
+
+            if (!resultOfInsertRefund.length) {
+                throw new Error('Refund is not created');
+            }
+
+            const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
+            const data = qs.stringify({
+                grant_type: 'client_credentials'
+            });
+
+            const resultOfTokenGet = await axios({
+                method: 'POST',
+                url: authData.urls.token,
+                headers: {
+                    Authorization: authHeader,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                data: data
+            });
+
+            await MySqlStorage.insertTransactionLog(refundData.refundTransactionUuid, JSON.stringify(resultOfTokenGet.data));
+
+            const resultOfRefundTransaction = await axios({
+                method: 'POST',
+                url: `${authData.urls.refund}/${refundData.captureId}/refund`,
+                headers: {
+                    Authorization: `${resultOfTokenGet.data.token_type} ${resultOfTokenGet.data.access_token}`,
+                    'Content-Type': 'application/json',
+                    'PayPal-Request-Id': refundData.refundTransactionUuid,
+                },
+                data: {
+                    amount: {
+                        value: resultOfInsertRefund[0].amount,
+                        currency_code: refundData.dictCurrencyIso4217
+                    },
+                    note_to_payer: refundData.title,
+                }
+            });
+
+            await MySqlStorage.insertTransactionLog(refundData.refundTransactionUuid, JSON.stringify(resultOfRefundTransaction.data));
+
+            if (resultOfRefundTransaction.data.status.toUpperCase() === PayPalStatus.COMPLETED) {
+                /** Prepare mail data **/
+                try {
+                    await sendPaymentEmail(TransactionStatus.SETTLED, refundData.refundTransactionUuid, true);
+                } catch (e) {
+                    logger.log(LoggerLevel.ERROR, loggerMessage({
+                        error: e,
+                        message: 'Error with prepare mail content',
+                        additionalData: e.additionalData,
+                    }));
+                }
+                return MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, TransactionStatus.SETTLED, parseInt(DateTime.local().setZone(LuxonTimezone.TZ).toFormat(LuxonTimezone.UNIX_TIMESTAMP_FORMAT)), null);
+            } else if (resultOfRefundTransaction.data.status.toUpperCase() === PayPalStatus.PENDING) {
+                return MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, TransactionStatus.PENDING, null, null);
+            }
+
+            return MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, TransactionStatus.CANCELED, null, null);
+        } catch (e) {
+            await (async () => {
+                await MySqlStorage.updateTransaction(refundData.refundTransactionUuid, null, TransactionStatus.ERROR, null, null);
+            })();
             throw e;
         }
     }

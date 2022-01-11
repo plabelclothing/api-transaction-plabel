@@ -11,6 +11,7 @@ var MailTemplate;
 (function (MailTemplate) {
     MailTemplate["ORDER_INVOICE"] = "order_invoice";
     MailTemplate["PAYMENT_STATUS"] = "payment_status";
+    MailTemplate["REFUND_INVOICE"] = "refund_invoice";
 })(MailTemplate = exports.MailTemplate || (exports.MailTemplate = {}));
 var SupportMail;
 (function (SupportMail) {
@@ -29,6 +30,14 @@ exports.MailSubject = {
         translate: {
             en: 'Receipt | PLABEL COMPANY',
             ru: 'Подтверждение оплаты | PLABEL COMPANY',
+        },
+        layout: 'layout_payment',
+        version: '1.0.0',
+    },
+    refund_invoice: {
+        translate: {
+            en: 'Refund confirmation | PLABEL COMPANY',
+            ru: 'Подтверждение возврата | PLABEL COMPANY',
         },
         layout: 'layout_payment',
         version: '1.0.0',
