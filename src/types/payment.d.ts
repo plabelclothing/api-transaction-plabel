@@ -45,6 +45,7 @@ export declare module Payment {
             createOrder: string,
             checkNotify: string,
             refund: string,
+            refundInfo: string,
         },
         webHookIds: {
             checkOrderApprove: string,

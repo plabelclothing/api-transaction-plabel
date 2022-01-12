@@ -10,3 +10,8 @@ export const enum ReturnUrl {
     SUCCESS = 'https://plabelclothing.com/paywall-callback?status=done',
     ERROR = 'https://plabelclothing.com/paywall-callback?status=error'
 }
+
+export enum TransactionType {
+    REFUND = 'refund',
+    SALE = 'sale',
+}

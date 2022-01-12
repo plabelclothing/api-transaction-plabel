@@ -54,4 +54,9 @@ export declare module DbQuery {
     export interface InsertRefund {
         amount: number,
     }
+
+    export interface GetTransactionByStatusAndType {
+        transaction__uuid: string,
+        transaction__external_id: string,
+    }
 }

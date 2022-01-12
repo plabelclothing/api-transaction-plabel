@@ -53,6 +53,7 @@ try {
         message: `API endpoint started at ${config_1.default.expressApi.bind}:${config_1.default.expressApi.port}`
     }));
     Promise.resolve().then(() => __importStar(require('../bin/services')));
+    Promise.resolve().then(() => __importStar(require('../bin/cron')));
 }
 catch (e) {
     utils_1.logger.log("error" /* ERROR */, utils_1.loggerMessage({

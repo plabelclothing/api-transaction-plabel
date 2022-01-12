@@ -50,6 +50,7 @@ try {
         message: `API endpoint started at ${config.expressApi.bind}:${config.expressApi.port}`
     }));
     import('../bin/services');
+    import('../bin/cron');
 } catch (e) {
     logger.log(LoggerLevel.ERROR, loggerMessage({
         message: 'Error starting API!',
