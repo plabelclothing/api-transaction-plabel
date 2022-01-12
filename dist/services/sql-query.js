@@ -500,6 +500,33 @@ MySqlStorage.getRefundData = (userCartItems) => executeQuery('CALL app_transacti
     return Promise.reject(error);
 });
 /**
+ * Get transaction by status and type
+ * @param transactionStatus
+ * @param transactionType
+ * @param paymentMethodCode
+ */
+MySqlStorage.getTransactionByStatusAndType = (transactionStatus, transactionType, paymentMethodCode) => executeQuery('CALL app_transaction__transaction__refund__get_by_status(?,?,?)', [
+    transactionStatus,
+    transactionType,
+    paymentMethodCode,
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+    const error = new utils_1.ResponseThrowError({
+        statusCode: 500,
+        message: `Failed while executing getTransactionByStatusAndType function. \nCaused by:\n ${e.stack}`,
+        response: {
+            status: "FAIL" /* FAIL */,
+            message: 'Internal server error',
+            data: {
+                errorCode: "MYSQL__ERROR" /* MYSQL_SERVICE__QUERY_ERR */,
+                errorId: 10000006 /* MYSQL_SERVICE__QUERY_ERR */,
+            }
+        }
+    });
+    return Promise.reject(error);
+});
+/**
  * Test query
  *
  */

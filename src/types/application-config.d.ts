@@ -92,6 +92,10 @@ declare module ApplicationConfig {
         }
     }
 
+    interface Cron {
+        payPalPendingRefund: string,
+    }
+
     export interface RootObject {
         application: string;
         applicationKey: string;
@@ -101,6 +105,7 @@ declare module ApplicationConfig {
         mysqlRead: MysqlRead;
         mysqlWrite: MysqlWrite;
         mailer: Mailer;
+        cron: Cron;
     }
 
 }

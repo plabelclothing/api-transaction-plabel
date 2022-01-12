@@ -4,5 +4,6 @@ export const enum OrderStatus {
     CANCELED = 'canceled',
     PENDING = 'pending',
     SHIPPED = 'shipped',
-    DELIVERED = 'delivered'
+    DELIVERED = 'delivered',
+    REFUNDED = 'refunded',
 }

@@ -6,12 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /** External modules **/
 const uuid_1 = require("uuid");
 const axios_1 = __importDefault(require("axios"));
+const luxon_1 = require("luxon");
 /** Core modules **/
 const qs_1 = __importDefault(require("qs"));
 /** Locale modules **/
 const enums_1 = require("../enums");
 const services_1 = require("../services");
-const luxon_1 = require("luxon");
 const utils_1 = require("../utils");
 class PayPal {
     /**
@@ -229,17 +229,84 @@ class PayPal {
                         additionalData: e.additionalData,
                     }));
                 }
+                await services_1.MySqlStorage.updateUserOrderData(refundData.refundTransactionUuid, null, null, "refunded" /* REFUNDED */);
                 return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.SETTLED, parseInt(luxon_1.DateTime.local().setZone(enums_1.LuxonTimezone.TZ).toFormat(enums_1.LuxonTimezone.UNIX_TIMESTAMP_FORMAT)), null);
             }
             else if (resultOfRefundTransaction.data.status.toUpperCase() === "PENDING" /* PENDING */) {
                 return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.PENDING, null, null);
             }
+            await services_1.MySqlStorage.updateUserOrderData(refundData.refundTransactionUuid, null, null, "canceled" /* CANCELED */);
             return services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, resultOfRefundTransaction.data.id, enums_1.TransactionStatus.CANCELED, null, null);
         }
         catch (e) {
             await (async () => {
                 await services_1.MySqlStorage.updateTransaction(refundData.refundTransactionUuid, null, enums_1.TransactionStatus.ERROR, null, null);
             })();
+            throw e;
+        }
+    }
+    /**
+     * Check status refunds
+     */
+    async checkStatusRefund() {
+        try {
+            /** Get auth data **/
+            const resultOfGetAuthData = await services_1.MySqlStorage.getPaymentMethodAuthData(enums_1.PaymentMethodCode.PAY_PAL);
+            if (!resultOfGetAuthData.length) {
+                throw new Error(`Payment method auth data is not exist`);
+            }
+            const authData = JSON.parse(resultOfGetAuthData[0].payment_method_auth__data);
+            /** Get transactions **/
+            const resultOfGetTransaction = await services_1.MySqlStorage.getTransactionByStatusAndType(enums_1.TransactionStatus.PENDING, enums_1.TransactionType.REFUND, enums_1.PaymentMethodCode.PAY_PAL);
+            if (!resultOfGetTransaction.length) {
+                return true;
+            }
+            for (const value of resultOfGetTransaction) {
+                const authHeader = 'Basic ' + Buffer.from(`${authData.username}:${authData.password}`).toString('base64');
+                const data = qs_1.default.stringify({
+                    grant_type: 'client_credentials'
+                });
+                const resultOfTokenGet = await axios_1.default({
+                    method: 'POST',
+                    url: authData.urls.token,
+                    headers: {
+                        Authorization: authHeader,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    data: data
+                });
+                await services_1.MySqlStorage.insertTransactionLog(value.transaction__uuid, JSON.stringify(resultOfTokenGet.data));
+                const resultOfGetTransactionInfo = await axios_1.default({
+                    method: 'GET',
+                    url: `${authData.urls.refundInfo}/${value.transaction__external_id}`,
+                    headers: {
+                        Authorization: `${resultOfTokenGet.data.token_type} ${resultOfTokenGet.data.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                await services_1.MySqlStorage.insertTransactionLog(value.transaction__uuid, JSON.stringify(resultOfGetTransactionInfo.data));
+                if (resultOfGetTransactionInfo.data.status.toUpperCase() === "COMPLETED" /* COMPLETED */) {
+                    /** Prepare mail data **/
+                    try {
+                        await utils_1.sendPaymentEmail(enums_1.TransactionStatus.SETTLED, value.transaction__uuid, true);
+                    }
+                    catch (e) {
+                        utils_1.logger.log("error" /* ERROR */, utils_1.loggerMessage({
+                            error: e,
+                            message: 'Error with prepare mail content',
+                            additionalData: e.additionalData,
+                        }));
+                    }
+                    await services_1.MySqlStorage.updateUserOrderData(value.transaction__uuid, null, null, "refunded" /* REFUNDED */);
+                    await services_1.MySqlStorage.updateTransaction(value.transaction__uuid, null, enums_1.TransactionStatus.SETTLED, parseInt(luxon_1.DateTime.local().setZone(enums_1.LuxonTimezone.TZ).toFormat(enums_1.LuxonTimezone.UNIX_TIMESTAMP_FORMAT)), null);
+                }
+                else if (resultOfGetTransactionInfo.data.status.toUpperCase() === "CANCELLED" /* CANCELLED */) {
+                    await services_1.MySqlStorage.updateUserOrderData(value.transaction__uuid, null, null, "canceled" /* CANCELED */);
+                    return services_1.MySqlStorage.updateTransaction(value.transaction__uuid, resultOfGetTransactionInfo.data.id, enums_1.TransactionStatus.CANCELED, null, null);
+                }
+            }
+        }
+        catch (e) {
             throw e;
         }
     }

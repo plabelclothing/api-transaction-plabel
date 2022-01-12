@@ -8,3 +8,8 @@ var TransactionStatus;
     TransactionStatus["CANCELED"] = "canceled";
     TransactionStatus["ERROR"] = "error";
 })(TransactionStatus = exports.TransactionStatus || (exports.TransactionStatus = {}));
+var TransactionType;
+(function (TransactionType) {
+    TransactionType["REFUND"] = "refund";
+    TransactionType["SALE"] = "sale";
+})(TransactionType = exports.TransactionType || (exports.TransactionType = {}));

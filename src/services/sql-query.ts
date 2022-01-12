@@ -516,6 +516,35 @@ MySqlStorage.getRefundData = (userCartItems: string) => executeQuery<DbQuery.Get
     });
 
 /**
+ * Get transaction by status and type
+ * @param transactionStatus
+ * @param transactionType
+ * @param paymentMethodCode
+ */
+MySqlStorage.getTransactionByStatusAndType = (transactionStatus: string, transactionType: string, paymentMethodCode: string) => executeQuery<DbQuery.GetTransactionByStatusAndType[][]>('CALL app_transaction__transaction__refund__get_by_status(?,?,?)', [
+    transactionStatus,
+    transactionType,
+    paymentMethodCode,
+])
+    .then((rows) => (Promise.resolve(rows[0])))
+    .catch((e) => {
+        const error = new ResponseThrowError({
+            statusCode: 500,
+            message: `Failed while executing getTransactionByStatusAndType function. \nCaused by:\n ${e.stack}`,
+            response: {
+                status: StatusHttp.FAIL,
+                message: 'Internal server error',
+                data: {
+                    errorCode: LogCode.MYSQL_SERVICE__QUERY_ERR,
+                    errorId: LogCodeId.MYSQL_SERVICE__QUERY_ERR,
+                }
+            }
+        });
+        return Promise.reject(error);
+    });
+
+
+/**
  * Test query
  *
  */
