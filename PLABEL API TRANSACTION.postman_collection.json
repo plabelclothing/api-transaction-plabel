@@ -1,0 +1,134 @@
+{
+	"info": {
+		"_postman_id": "b8f8e553-5b6e-4ea7-a886-162177060e23",
+		"name": "PLABEL API TRANSACTION",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "INIT SALE",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 1234567890",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userOrderUuid\": \"c40e99e0-fb29-45d7-83d9-14aba3f6ec27\",\r\n    \"paymentMethodCode\": \"PAY_PAL\",\r\n    \"countryIso\": \"us\",\r\n    \"language\": \"en\",\r\n    \"amount\": 80,\r\n    \"dictCurrencyIso4217\": \"EUR\",\r\n    \"shipping\": {\r\n        \"address\": {\r\n            \"postal_code\": \"40083\",\r\n            \"admin_area_1\": \"Kat\",\r\n            \"admin_area_2\": \"Lat\",\r\n            \"country_code\": \"PL\",\r\n            \"address_line_1\": \"dfsd\",\r\n            \"address_line_2\": \"string\",\r\n            \"email\": \"shurik045@gmail.com\",\r\n            \"phone\": \"+48508603852\"\r\n        },\r\n        \"name\": {\r\n            \"full_name\": \"Aleksander Dupa\"\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{host}}/v1/transaction/sale",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"v1",
+						"transaction",
+						"sale"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYPAL NOTIFY",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "paypal-transmission-id",
+						"value": "0c327cb0-db3f-11eb-bddd-f131e43d8891",
+						"type": "text"
+					},
+					{
+						"key": "paypal-transmission-time",
+						"value": "2021-07-02T14:08:59Z",
+						"type": "text"
+					},
+					{
+						"key": "paypal-cert-url",
+						"value": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-7a8abba8",
+						"type": "text"
+					},
+					{
+						"key": "paypal-auth-algo",
+						"value": "SHA256withRSA",
+						"type": "text"
+					},
+					{
+						"key": "paypal-transmission-sig",
+						"value": "C6PTP+EAIEHW2lWaUe0CI5+HeNCfMMT+FFqH5oMAirFNsCQalrkHCxAEVaClFNU+DG/ATs2KTGOJ9Bzw/2GPVieyrnOrVFvSgOUCK++VkqE1uDs2WAifL4Lu0LJYr4eI2n/ZhqlOpTHF14rySStrHL3QfqAP80rjXeiMrTzSqoohLtGbrQ2NwfbzEjoEVDdngUcNww9zfBb19i4r8t3RMuI2lguHtHH7/zqCfM88CevNy279aZCmwPX5934BN4DbLWWw4/mRRirI4dmUR/bbDp26bsCXH8LG7u512V7bPeMTPr0bLWiKZSapf30f1Q8C8Ewnh/poDZ6KTuWj51+gpw==",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"WH-7RX98846KL652333X-52V50921WX400064C\",\r\n    \"event_version\": \"1.0\",\r\n    \"create_time\": \"2021-07-02T14:08:56.022Z\",\r\n    \"resource_type\": \"checkout-order\",\r\n    \"resource_version\": \"2.0\",\r\n    \"event_type\": \"CHECKOUT.ORDER.APPROVED\",\r\n    \"summary\": \"An order has been approved by buyer\",\r\n    \"resource\": {\r\n        \"create_time\": \"2021-07-02T14:08:38Z\",\r\n        \"purchase_units\": [\r\n            {\r\n                \"reference_id\": \"f8a58bfb-6c3b-462d-8f0e-55478f1ec0a3\",\r\n                \"amount\": {\r\n                    \"currency_code\": \"EUR\",\r\n                    \"value\": \"200.00\"\r\n                },\r\n                \"payee\": {\r\n                    \"email_address\": \"sb-unlpp5170750@business.example.com\",\r\n                    \"merchant_id\": \"5J3TCF9KE8NRS\"\r\n                },\r\n                \"shipping\": {\r\n                    \"name\": {\r\n                        \"full_name\": \"Aleksander Ziabko\"\r\n                    },\r\n                    \"address\": {\r\n                        \"address_line_1\": \"Opolska\",\r\n                        \"address_line_2\": \"4/5A\",\r\n                        \"admin_area_2\": \"Katowice\",\r\n                        \"admin_area_1\": \"Katowice\",\r\n                        \"postal_code\": \"40-083\",\r\n                        \"country_code\": \"PL\"\r\n                    }\r\n                }\r\n            }\r\n        ],\r\n        \"links\": [\r\n            {\r\n                \"href\": \"https://api.sandbox.paypal.com/v2/checkout/orders/43E60774CT1843327\",\r\n                \"rel\": \"self\",\r\n                \"method\": \"GET\"\r\n            },\r\n            {\r\n                \"href\": \"https://api.sandbox.paypal.com/v2/checkout/orders/43E60774CT1843327\",\r\n                \"rel\": \"update\",\r\n                \"method\": \"PATCH\"\r\n            },\r\n            {\r\n                \"href\": \"https://api.sandbox.paypal.com/v2/checkout/orders/43E60774CT1843327/capture\",\r\n                \"rel\": \"capture\",\r\n                \"method\": \"POST\"\r\n            }\r\n        ],\r\n        \"id\": \"43E60774CT1843327\",\r\n        \"intent\": \"CAPTURE\",\r\n        \"payer\": {\r\n            \"name\": {\r\n                \"given_name\": \"John\",\r\n                \"surname\": \"Doe\"\r\n            },\r\n            \"email_address\": \"sb-p21su5169865@personal.example.com\",\r\n            \"payer_id\": \"W34Y6YPJPK74C\",\r\n            \"address\": {\r\n                \"country_code\": \"PL\"\r\n            }\r\n        },\r\n        \"status\": \"APPROVED\"\r\n    },\r\n    \"links\": [\r\n        {\r\n            \"href\": \"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-7RX98846KL652333X-52V50921WX400064C\",\r\n            \"rel\": \"self\",\r\n            \"method\": \"GET\"\r\n        },\r\n        {\r\n            \"href\": \"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-7RX98846KL652333X-52V50921WX400064C/resend\",\r\n            \"rel\": \"resend\",\r\n            \"method\": \"POST\"\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{host}}/v1/notification/paypal",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"v1",
+						"notification",
+						"paypal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "REFUND",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 1234567890",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userCartItems\": [\r\n        \"47906c83-47e1-4083-83cf-21dad1a2b29e\"\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{host}}/v1/transaction/refund",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"v1",
+						"transaction",
+						"refund"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

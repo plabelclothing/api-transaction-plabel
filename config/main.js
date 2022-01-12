@@ -93,4 +93,8 @@ config.mailer = {
 	}
 };
 
+config.cron = {
+	payPalPendingRefund: '0 0 */1 * * *',
+};
+
 module.exports = config;
